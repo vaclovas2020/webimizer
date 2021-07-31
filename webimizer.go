@@ -8,20 +8,33 @@ import (
 	"strings"
 )
 
+/* Define default Http Response headers
+Example:
+
+app.DefaultHTTPHeaders = [][]string{
+		{"x-content-type-options", "nosniff"},
+		{"x-frame-options", "SAMEORIGIN"},
+		{"x-xss-protection", "1; mode=block"},
+	} // define default headers
+*/
 var DefaultHTTPHeaders [][]string
 
 type gzipResponseWriter struct {
 	io.Writer
 	http.ResponseWriter
 }
+
+/* The man struct, where You can define Handler (it is main HttpHandler, which is called only, when Http method is allowed), NotAllowHandler (it is HttpHandler, which is called only if Http method is not allowed) and AllowedMethods (string array, which contaains allowed HTTP method names) */
 type HttpHandlerStruct struct {
 	NotAllowHandler HttpNotAllowHandler
 	Handler         HttpHandler
 	AllowedMethods  []string
 }
 
+/* it is HttpHandler, which is called only if Http method is not allowed */
 type HttpNotAllowHandler func(http.ResponseWriter, *http.Request)
 
+/* Build HttpHandler, which can by used in http.Handle and http.HandleFunc */
 func (builder HttpHandlerStruct) Build() HttpHandler {
 	return HttpHandler(func(w http.ResponseWriter, r *http.Request) {
 		builder.notAllowed(w, r, builder.Handler, func(rw http.ResponseWriter, r *http.Request) {
@@ -34,8 +47,10 @@ func (builder HttpHandlerStruct) Build() HttpHandler {
 	})
 }
 
+/* It is main HttpHandler, which is called only, when Http method is allowed */
 type HttpHandler func(http.ResponseWriter, *http.Request)
 
+/* Compressing Http response by using gzipResponseWriter (only if Accept-Encoding request header is set and contains gzip value) and also add DefaultHttpHeaders to Http response */
 func (fn HttpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if DefaultHTTPHeaders != nil {
 		for _, v := range DefaultHTTPHeaders {
