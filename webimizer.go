@@ -8,6 +8,8 @@ import (
 	"strings"
 )
 
+var DefaultHTTPHeaders [][]string
+
 type gzipResponseWriter struct {
 	io.Writer
 	http.ResponseWriter
@@ -23,7 +25,6 @@ type HttpNotAllowHandler func(http.ResponseWriter, *http.Request)
 func (builder HttpHandlerStruct) Build() HttpHandler {
 	return HttpHandler(func(w http.ResponseWriter, r *http.Request) {
 		builder.notAllowed(w, r, builder.Handler, func(rw http.ResponseWriter, r *http.Request) {
-			rw.WriteHeader(http.StatusBadRequest)
 			if builder.NotAllowHandler != nil {
 				builder.NotAllowHandler(rw, r)
 			} else {
@@ -36,9 +37,13 @@ func (builder HttpHandlerStruct) Build() HttpHandler {
 type HttpHandler func(http.ResponseWriter, *http.Request)
 
 func (fn HttpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("x-content-type-options", "nosniff")
-	w.Header().Set("x-frame-options", "SAMEORIGIN")
-	w.Header().Set("x-xss-protection", "1; mode=block")
+	if DefaultHTTPHeaders != nil {
+		for _, v := range DefaultHTTPHeaders {
+			if len(v) == 2 {
+				w.Header().Set(v[0], v[1])
+			}
+		}
+	}
 	if !strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
 		fn(w, r)
 		return
