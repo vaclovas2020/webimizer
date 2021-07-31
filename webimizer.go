@@ -8,7 +8,8 @@ import (
 	"strings"
 )
 
-/* Define default Http Response headers
+/*
+Define default Http Response headers
 Example:
     [][]string{
 		{"x-content-type-options", "nosniff"},
@@ -23,18 +24,24 @@ type gzipResponseWriter struct {
 	http.ResponseWriter
 }
 
-/* The main struct, where You can define Handler (it is main HttpHandler, which is called only, when Http method is allowed), NotAllowHandler (it is HttpHandler, which is called only if Http method is not allowed) and AllowedMethods ([]string array, which contains allowed HTTP method names)
-You must call func Build to build HttpHandler  */
+/*
+The main struct, where You can define Handler (it is main HttpHandler, which is called only, when Http method is allowed), NotAllowHandler (it is HttpHandler, which is called only if Http method is not allowed) and AllowedMethods ([]string array, which contains allowed HTTP method names)
+You must call func Build to build HttpHandler
+*/
 type HttpHandlerStruct struct {
 	NotAllowHandler HttpNotAllowHandler
 	Handler         HttpHandler
 	AllowedMethods  []string
 }
 
-/* It is HttpHandler, which is called only if Http method is not allowed */
+/*
+It is HttpHandler, which is called only if Http method is not allowed
+*/
 type HttpNotAllowHandler func(http.ResponseWriter, *http.Request)
 
-/* Build HttpHandler, which can by used in http.Handle and http.HandleFunc */
+/*
+Build HttpHandler, which can by used in http.Handle (but not in http.HandleFunc, because only http.Handle call ServeHTTP)
+*/
 func (builder HttpHandlerStruct) Build() HttpHandler {
 	return HttpHandler(func(w http.ResponseWriter, r *http.Request) {
 		builder.notAllowed(w, r, builder.Handler, func(rw http.ResponseWriter, r *http.Request) {
@@ -47,10 +54,14 @@ func (builder HttpHandlerStruct) Build() HttpHandler {
 	})
 }
 
-/* It is main HttpHandler, which is called only, when Http method is allowed */
+/*
+It is main HttpHandler, which is called only, when Http method is allowed
+*/
 type HttpHandler func(http.ResponseWriter, *http.Request)
 
-/* Compressing Http response by using gzipResponseWriter (only if Accept-Encoding request header is set and contains gzip value) and also add DefaultHttpHeaders to Http response */
+/*
+Compressing Http response by using gzipResponseWriter (only if Accept-Encoding request header is set and contains gzip value) and also add DefaultHttpHeaders to Http response
+*/
 func (fn HttpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if DefaultHTTPHeaders != nil {
 		for _, v := range DefaultHTTPHeaders {
