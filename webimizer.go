@@ -10,8 +10,7 @@ import (
 
 /* Define default Http Response headers
 Example:
-
-app.DefaultHTTPHeaders = [][]string{
+    [][]string{
 		{"x-content-type-options", "nosniff"},
 		{"x-frame-options", "SAMEORIGIN"},
 		{"x-xss-protection", "1; mode=block"},
@@ -24,14 +23,15 @@ type gzipResponseWriter struct {
 	http.ResponseWriter
 }
 
-/* The man struct, where You can define Handler (it is main HttpHandler, which is called only, when Http method is allowed), NotAllowHandler (it is HttpHandler, which is called only if Http method is not allowed) and AllowedMethods (string array, which contaains allowed HTTP method names) */
+/* The main struct, where You can define Handler (it is main HttpHandler, which is called only, when Http method is allowed), NotAllowHandler (it is HttpHandler, which is called only if Http method is not allowed) and AllowedMethods ([]string array, which contains allowed HTTP method names)
+You must call func Build to build HttpHandler  */
 type HttpHandlerStruct struct {
 	NotAllowHandler HttpNotAllowHandler
 	Handler         HttpHandler
 	AllowedMethods  []string
 }
 
-/* it is HttpHandler, which is called only if Http method is not allowed */
+/* It is HttpHandler, which is called only if Http method is not allowed */
 type HttpNotAllowHandler func(http.ResponseWriter, *http.Request)
 
 /* Build HttpHandler, which can by used in http.Handle and http.HandleFunc */
