@@ -35,6 +35,83 @@ type HttpHandlerStruct struct {
 }
 
 /*
+Http handler for use in IfHttpMethod func
+*/
+type IfHttpMethodHandler func(http.ResponseWriter, *http.Request)
+
+/*
+Helper func to check r.Method and call handler only if needMethod is equal r.Method
+*/
+func IfHttpMethod(needMethod string, rw http.ResponseWriter, r *http.Request, handler IfHttpMethodHandler) {
+	if r.Method == needMethod {
+		handler(rw, r)
+	}
+}
+
+/*
+Helper func to check r.Method and call handler only if r.Method is GET
+*/
+func Get(rw http.ResponseWriter, r *http.Request, handler IfHttpMethodHandler) {
+	IfHttpMethod(http.MethodGet, rw, r, handler)
+}
+
+/*
+Helper func to check r.Method and call handler only if r.Method is HEAD
+*/
+func Head(rw http.ResponseWriter, r *http.Request, handler IfHttpMethodHandler) {
+	IfHttpMethod(http.MethodHead, rw, r, handler)
+}
+
+/*
+Helper func to check r.Method and call handler only if r.Method is POST
+*/
+func Post(rw http.ResponseWriter, r *http.Request, handler IfHttpMethodHandler) {
+	IfHttpMethod(http.MethodPost, rw, r, handler)
+}
+
+/*
+Helper func to check r.Method and call handler only if r.Method is PUT
+*/
+func Put(rw http.ResponseWriter, r *http.Request, handler IfHttpMethodHandler) {
+	IfHttpMethod(http.MethodPut, rw, r, handler)
+}
+
+/*
+Helper func to check r.Method and call handler only if r.Method is DELETE
+*/
+func Delete(rw http.ResponseWriter, r *http.Request, handler IfHttpMethodHandler) {
+	IfHttpMethod(http.MethodDelete, rw, r, handler)
+}
+
+/*
+Helper func to check r.Method and call handler only if r.Method is CONNECT
+*/
+func Connect(rw http.ResponseWriter, r *http.Request, handler IfHttpMethodHandler) {
+	IfHttpMethod(http.MethodConnect, rw, r, handler)
+}
+
+/*
+Helper func to check r.Method and call handler only if r.Method is OPTIONS
+*/
+func Options(rw http.ResponseWriter, r *http.Request, handler IfHttpMethodHandler) {
+	IfHttpMethod(http.MethodOptions, rw, r, handler)
+}
+
+/*
+Helper func to check r.Method and call handler only if r.Method is TRACE
+*/
+func Trace(rw http.ResponseWriter, r *http.Request, handler IfHttpMethodHandler) {
+	IfHttpMethod(http.MethodTrace, rw, r, handler)
+}
+
+/*
+Helper func to check r.Method and call handler only if r.Method is PATCH
+*/
+func Patch(rw http.ResponseWriter, r *http.Request, handler IfHttpMethodHandler) {
+	IfHttpMethod(http.MethodPatch, rw, r, handler)
+}
+
+/*
 It is HttpHandler, which is called only if Http method is not allowed
 */
 type HttpNotAllowHandler func(http.ResponseWriter, *http.Request)
@@ -63,11 +140,9 @@ type HttpHandler func(http.ResponseWriter, *http.Request)
 Compressing Http response by using gzipResponseWriter (only if Accept-Encoding request header is set and contains gzip value) and also add DefaultHttpHeaders to Http response
 */
 func (fn HttpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if DefaultHTTPHeaders != nil {
-		for _, v := range DefaultHTTPHeaders {
-			if len(v) == 2 {
-				w.Header().Set(v[0], v[1])
-			}
+	for _, v := range DefaultHTTPHeaders {
+		if len(v) == 2 {
+			w.Header().Set(v[0], v[1])
 		}
 	}
 	if !strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
