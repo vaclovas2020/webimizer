@@ -26,12 +26,15 @@ type gzipResponseWriter struct {
 
 /*
 The main struct, where You can define Handler (it is main HttpHandler, which is called only, when Http method is allowed), NotAllowHandler (it is HttpHandler, which is called only if Http method is not allowed) and AllowedMethods ([]string array, which contains allowed HTTP method names)
-You must call func Build to build HttpHandler
+You must call func Build to build HttpHandler.
+
+In version v1.1 added AllowedOrigins field (optional): use if you want to check Origin header
 */
 type HttpHandlerStruct struct {
 	NotAllowHandler HttpNotAllowHandler
 	Handler         HttpHandler
 	AllowedMethods  []string
+	AllowedOrigins  []string
 }
 
 /*
@@ -121,13 +124,13 @@ Build HttpHandler, which can by used in http.Handle (but not in http.HandleFunc,
 */
 func (builder HttpHandlerStruct) Build() HttpHandler {
 	return HttpHandler(func(w http.ResponseWriter, r *http.Request) {
-		builder.notAllowed(w, r, builder.Handler, func(rw http.ResponseWriter, r *http.Request) {
+		builder.notAllowed(r, func(rw http.ResponseWriter, r *http.Request) {
 			if builder.NotAllowHandler != nil {
 				builder.NotAllowHandler(rw, r)
 			} else {
 				fmt.Fprint(rw, "Bad Request")
 			}
-		}, builder.AllowedMethods)(w, r)
+		})(w, r)
 	})
 }
 
@@ -164,10 +167,20 @@ func (w gzipResponseWriter) Write(b []byte) (int, error) {
 	return w.Writer.Write(b)
 }
 
-func (fn HttpHandlerStruct) notAllowed(w http.ResponseWriter, r *http.Request, mainHandler HttpHandler, notAllowed HttpHandler, supportedMethods []string) HttpHandler {
-	for _, method := range supportedMethods {
-		if method == r.Method {
-			return mainHandler
+func (fn HttpHandlerStruct) checkOrigins(r *http.Request) bool {
+	for _, origin := range fn.AllowedOrigins {
+		if origin == r.Header.Get("Origin") {
+			return true
+		}
+	}
+	return false
+}
+
+func (fn HttpHandlerStruct) notAllowed(r *http.Request, notAllowed HttpHandler) HttpHandler {
+	hasOrigins := len(fn.AllowedOrigins) > 0
+	for _, method := range fn.AllowedMethods {
+		if method == r.Method && (!hasOrigins || fn.checkOrigins(r)) {
+			return fn.Handler
 		}
 	}
 	return notAllowed
