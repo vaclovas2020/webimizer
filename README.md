@@ -25,10 +25,15 @@ func main() {
 	} // define default headers
 	http.Handle("/", app.HttpHandlerStruct{
 		Handler: app.HttpHandler(func(rw http.ResponseWriter, r *http.Request) {
-			fmt.Fprint(rw, "Hello from webimizer. Only HTTP GET method is allowed...")
+			app.Get(rw, r, func(rw http.ResponseWriter, r *http.Request) {
+				fmt.Fprint(rw, "Hello from webimizer. HTTP GET method was used.")
+			})
+			app.Post(rw, r, func(rw http.ResponseWriter, r *http.Request) {
+				fmt.Fprint(rw, "Hello from webimizer. HTTP POST method was used.")
+			})
 		}), // app.HttpHandler call only if method is allowed
 		NotAllowHandler: app.HttpNotAllowHandler(httpNotAllowFunc), // app.HtttpNotAllowHandler call if method is not allowed
-		AllowedMethods:  []string{"GET"},                           // define allowed methods
+		AllowedMethods:  []string{"GET","POST"},                           // define allowed methods
 	}.Build())
 	log.Fatal(http.ListenAndServe(":8080", nil)) // example server listen on port 8080
 }
