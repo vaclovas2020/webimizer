@@ -1,3 +1,3 @@
-module github.com/vaclovas2020/webimizer
+module webimizer.dev/webimizer
 
 go 1.17
