@@ -9,7 +9,7 @@ import (
 	"log"
 	"net/http"
 
-	app "github.com/vaclovas2020/webimizer"
+	app "webimizer.dev/webimizer"
 )
 
 func httpNotAllowFunc(rw http.ResponseWriter, r *http.Request) {
