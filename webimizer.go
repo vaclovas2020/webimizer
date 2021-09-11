@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"path/filepath"
 	"strings"
 )
 
@@ -184,4 +185,58 @@ func (fn HttpHandlerStruct) notAllowed(r *http.Request, notAllowed HttpHandler) 
 		}
 	}
 	return notAllowed
+}
+
+/*
+struct for serving filesystem
+*/
+type neuteredFileSystem struct {
+	fs http.FileSystem
+	w  http.ResponseWriter
+	r  *http.Request
+}
+
+/*
+Create http Handler for serving files in fsPath directory.
+If file not found return 404 status and serve error404.html if exist
+*/
+func NewFileServerHandler(fsPath string) HttpHandler {
+	return HttpHandler(func(rw http.ResponseWriter, r *http.Request) {
+		http.FileServer(neuteredFileSystem{fs: http.Dir(fsPath), w: rw, r: r}).ServeHTTP(rw, r)
+	})
+}
+
+/*
+Read and send requested file to client
+If file not found return 404 status and serve 404 document file if error404.html exist
+*/
+func (nfs neuteredFileSystem) Open(path string) (http.File, error) {
+	errorHandler := func() (http.File, error) {
+		f, err := nfs.fs.Open("/error404.html")
+		if err != nil {
+			return nil, err
+		}
+		nfs.w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		nfs.w.WriteHeader(http.StatusNotFound)
+		return f, nil
+	}
+	f, err := nfs.fs.Open(path)
+	if err != nil {
+		return errorHandler()
+	}
+
+	s, _ := f.Stat()
+	if s.IsDir() {
+		index := filepath.Join(path, "index.html")
+		if _, err := nfs.fs.Open(index); err != nil {
+			closeErr := f.Close()
+			if closeErr != nil {
+				return errorHandler()
+			}
+
+			return errorHandler()
+		}
+	}
+
+	return f, nil
 }
